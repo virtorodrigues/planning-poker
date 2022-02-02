@@ -35,19 +35,20 @@ export function ListOfCards() {
         as="ul"
         overflowY={"hidden"}
         overflowX={"auto"}
-        paddingX={10}
+        paddingX={[5, 5, 10]}
         whiteSpace={'nowrap'}
         width={"100%"}
         listStyleType={"none"}
         textAlign="center"
       >
         {cards.map((card, index) => (
-          <CardToChoose
-            key={index}
-            active={card.active}
-            score={card.score}
-            handleActiveCard={handleActiveCard}
-          />
+          <Box key={index} py={5} as="li" display="inline-block">
+            <CardToChoose
+              active={card.active}
+              score={card.score}
+              handleActiveCard={handleActiveCard}
+            />
+          </Box>
         ))}
       </Box >
     </Box>

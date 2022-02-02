@@ -13,4 +13,14 @@ const colors = {
   },
 }
 
-export const theme = extendTheme({ colors })
+const styles = {
+  global: {
+    body: {
+      bg: 'whitesmoke',
+      color: 'brand.900',
+    }
+  }
+}
+
+
+export const theme = extendTheme({ colors, styles })

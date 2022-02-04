@@ -1,17 +1,15 @@
-import { Button, Flex, Stack, Textarea } from '@chakra-ui/react'
-import type { NextPage } from 'next'
-import { CardUser } from '../components/CardUser';
-import { ListOfCards } from '../components/ListOfCards';
-import { TaskTitle } from '../components/TaskTitle';
-import { database } from '../services/firebase';
-import { getDatabase, ref, set } from "firebase/database";
+import { Button, Flex, Stack, Textarea } from '@chakra-ui/react';
+import { ref, set } from "firebase/database";
+import type { GetServerSideProps, NextPage } from 'next';
+import { CardUser } from '../../components/CardUser';
+import { ListOfCards } from '../../components/ListOfCards';
+import { TaskTitle } from '../../components/TaskTitle';
+import { database } from '../../services/firebase';
 
 const Game: NextPage = () => {
 
-
   function writeUserData() {
-    const db = database;
-    set(ref(db, 'room/' + 23221), {
+    set(ref(database, 'room/' + 'asdasd'), {
       username: 'nome'
     });
   }
@@ -40,4 +38,11 @@ const Game: NextPage = () => {
   )
 }
 
-export default Game
+export default Game;
+
+export const getServerSideProps: GetServerSideProps = async ({ req, params }) => {
+  return {
+    props: {
+    }
+  }
+}

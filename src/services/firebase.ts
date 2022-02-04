@@ -9,14 +9,16 @@ import { getDatabase } from "firebase/database";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_KEY,
-  authDomain: "planning-poker-d0378.firebaseapp.com",
+  authDomain: process.env.AUTH_DOMAIN,
   projectId: "planning-poker-d0378",
-  storageBucket: "planning-poker-d0378.appspot.com",
-  messagingSenderId: "368833873200",
-  appId: "1:368833873200:web:bd000ca053c3e6f3bef4f5",
-  measurementId: "G-W14J6BFJKJ"
+  storageBucket: process.env.STORAGE_BUCKET,
+  messagingSenderId: process.env.MESSAGING_SENDER_ID,
+  appId: process.env.APP_ID,
+  measurementId: process.env.MEASUREMENT_ID
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const database = getDatabase(app);
+const firebase = initializeApp(firebaseConfig);
+const database = getDatabase(firebase);
+
+export { database, firebase };

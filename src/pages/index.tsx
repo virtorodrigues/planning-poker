@@ -1,7 +1,26 @@
-import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
-import type { NextPage } from 'next'
+import { Button, Flex, Heading, Stack } from '@chakra-ui/react';
+import { push, ref, set } from 'firebase/database';
+import type { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { FormEvent } from 'react';
+import { database } from '../services/firebase';
 
 const Landing: NextPage = () => {
+  const history = useRouter();
+
+  async function handleNewRoom(event: FormEvent) {
+    event.preventDefault();
+
+    const roomListRef = ref(database, 'room')
+    const roomRef = push(roomListRef);
+
+    set(roomRef, {
+      title: 'tituloooo'
+    });
+
+    history.push(`/rooms/${roomRef.key}`);
+  }
+
   return (
     <Flex align="center" justify="center" h={"100vh"}>
       <Stack spacing={50}>
@@ -10,7 +29,7 @@ const Landing: NextPage = () => {
           <Heading color={"brand.900"}>Planning Poker!</Heading>
         </Stack>
 
-        <Button mt={5} colorScheme={"blue"}>
+        <Button onClick={handleNewRoom} mt={5} colorScheme={"blue"}>
           Criar nova sala
         </Button>
       </Stack>

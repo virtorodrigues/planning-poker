@@ -1,4 +1,4 @@
-import { Flex, Text } from "@chakra-ui/react"
+import { Flex, Stack, Text } from "@chakra-ui/react"
 import { CardUserProps } from "../core/types";
 
 export function CardUser({ status = "initial", score }: CardUserProps) {
@@ -13,20 +13,23 @@ export function CardUser({ status = "initial", score }: CardUserProps) {
   }
 
   return (
-    <Flex
-      justifyContent="center"
-      alignItems="center"
-      h={"4rem"}
-      w={"2.8rem"}
-      border={"2px"}
-      borderColor={borderColor}
-      borderRadius={10}
-      bg={bgColor}
-      _hover={{
-        cursor: "default"
-      }}
-    >
-      <Text fontWeight="semibold" fontSize={18}>{showScore && score}</Text>
-    </Flex>
+    <Stack>
+      <Flex
+        justifyContent="center"
+        alignItems="center"
+        h={"4rem"}
+        w={"2.8rem"}
+        border={"2px"}
+        borderColor={borderColor}
+        borderRadius={10}
+        bg={bgColor}
+        _hover={{
+          cursor: "default"
+        }}
+      >
+        <Text fontWeight="semibold" fontSize={18}>{showScore && score}</Text>
+      </Flex>
+      <Text fontWeight="bold">Vitor</Text>
+    </Stack>
   )
 }

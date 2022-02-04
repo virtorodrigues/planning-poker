@@ -3,8 +3,19 @@ import type { NextPage } from 'next'
 import { CardUser } from '../components/CardUser';
 import { ListOfCards } from '../components/ListOfCards';
 import { TaskTitle } from '../components/TaskTitle';
+import { database } from '../services/firebase';
+import { getDatabase, ref, set } from "firebase/database";
 
 const Game: NextPage = () => {
+
+
+  function writeUserData() {
+    const db = database;
+    set(ref(db, 'room/' + 23221), {
+      username: 'nome'
+    });
+  }
+
   return (
     <>
       <Flex direction="column" justify="center" align="center" my="120px">
@@ -14,12 +25,10 @@ const Game: NextPage = () => {
             <TaskTitle />
           </Flex>
 
-
           <Stack maxWidth={780} w={780} spacing={5} align="end">
             <Textarea maxHeight={200} maxWidth={780} placeholder="Digite o título da tarefa...." />
-            <Button width={100} colorScheme="blue">Confirmar</Button>
+            <Button onClick={writeUserData} width={100} colorScheme="blue">Confirmar</Button>
           </Stack>
-
 
           <CardUser score={54} />
         </Flex>

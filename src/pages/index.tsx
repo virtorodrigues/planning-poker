@@ -11,12 +11,12 @@ const Landing: NextPage = () => {
   async function handleNewRoom(event: FormEvent) {
     event.preventDefault();
 
-    const roomListRef = ref(database, 'room')
+    const roomListRef = ref(database, 'rooms')
     const roomRef = push(roomListRef);
 
     set(roomRef, {
       title: '',
-      users: '',
+      // users: '',
       active: true,
     });
 

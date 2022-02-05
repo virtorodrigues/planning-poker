@@ -15,7 +15,9 @@ const Landing: NextPage = () => {
     const roomRef = push(roomListRef);
 
     set(roomRef, {
-      title: 'tituloooo'
+      title: '',
+      users: '',
+      active: true,
     });
 
     history.push(`/rooms/${roomRef.key}`);

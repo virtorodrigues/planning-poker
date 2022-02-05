@@ -1,9 +1,13 @@
 import { Heading } from "@chakra-ui/react";
 
-export function TaskTitle() {
+type TaskTitle = {
+  taskTitle: string;
+}
+
+export function TaskTitle({ taskTitle }: TaskTitle) {
   return (
     <Heading>
-      Titulo da task
+      {taskTitle}
     </Heading>
   )
 }

@@ -1,5 +1,5 @@
 import { Button, Flex, HStack, Input, Stack, Textarea } from '@chakra-ui/react';
-import { child, get, off, onValue, push, ref, set, update } from "firebase/database";
+import { child, get, off, onValue, push, ref, remove, set, update } from "firebase/database";
 import type { GetServerSideProps } from 'next';
 import { ParsedUrlQuery } from 'querystring';
 import { FormEvent, useEffect, useState } from 'react';
@@ -41,11 +41,26 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
   useEffect(() => {
     console.log(userKeyCookie['planning-poker-user-key']);
 
+
     if (userKeyCookie) {
 
     }
-  }, []);
 
+
+    if (typeof window != "undefined") { // needed if SSR
+      //if (window) {
+      window.addEventListener("beforeunload", function (e) {
+        var confirmationMessage = "\o/";
+        remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
+
+        (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+        return confirmationMessage;                            //Webkit, Safari, Chrome
+      });
+      //}
+
+    }
+
+  }, []);
 
 
   useEffect(() => {
@@ -85,13 +100,17 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
     const starCountRef = ref(database, `rooms/${roomKey}`);
 
-    onValue(starCountRef, (snapshot) => {
+    const fireEvent = onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
 
       setDataRoom(data);
     });
 
     return () => {
+      remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
+
+
+
       //remove user from firebase
       //remove user from cookies
       //remove listnner
@@ -111,7 +130,7 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
   }
 
   const handleToggleEditTitle = () => {
-    setIsEditingTitle(!isEditingTitle);
+    remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
   }
 
   const handleCreateNameToUser = (e: FormEvent) => {

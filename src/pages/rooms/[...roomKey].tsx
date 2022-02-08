@@ -62,7 +62,20 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
     const fireEvent = onValue(firebaseRef, (snapshot) => {
       const data = snapshot.val();
 
+      const users = Object.entries(data.users).map((key, user) => ({
+        key: key,
+        user: user,
+      }))
+
+      console.log(users)
+
+      const dataFormatted = {
+        ...data,
+//        users: 
+      }
+
       setDataRoom(data);
+      console.log(data);
     });
 
   }, []);
@@ -152,7 +165,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
     const newUser = {
       name: context.req.cookies['planning-poker-user-name'] || '',
-      admin: context.req.cookies['planning-poker-admin'] || true,
+      admin: true,
     };
 
     if (snapshot.exists()) {

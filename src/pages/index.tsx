@@ -15,8 +15,7 @@ const Landing: NextPage = () => {
     const roomRef = push(roomListRef);
 
     set(roomRef, {
-      title: '',
-      // users: '',
+      title: 'Título e/ou descrição da task....',
       active: true,
     });
 

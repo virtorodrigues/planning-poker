@@ -39,82 +39,31 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    console.log(userKeyCookie['planning-poker-user-key']);
-
-
-    if (userKeyCookie) {
-
-    }
-
-
+    // exit to application
     if (typeof window != "undefined") { // needed if SSR
       //if (window) {
       window.addEventListener("beforeunload", function (e) {
         var confirmationMessage = "\o/";
+
+
+        //verificar se for admin, passar admin para outro player
+        //se só tiver o admin na sala, exluir a sala
+
         remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
 
         (e || window.event).returnValue = confirmationMessage; //Gecko + IE
         return confirmationMessage;                            //Webkit, Safari, Chrome
       });
-      //}
-
     }
-
   }, []);
 
-
   useEffect(() => {
-
-    const dbRef = ref(database);
-    get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
-      if (snapshot.exists()) {
-        console.log(snapshot.val());
-
-
-      } else {
-
-        //  setCookie("planning-poker-user-name", 'vitor', configCookie);
-        //   setCookie("planning-poker-admin", true, configCookie);
-        //   console.log("No data available");
-
-
-      }
-    }).catch((error) => {
-      console.error(error);
-    });
-
-    if (userKeyCookie) {
-
-    }
-
-    //verificar usuario
-    const configCookie = {
-      path: "/",
-      maxAge: 3600, // Expires after 1hr
-      sameSite: true,
-    };
-
-    //  setCookie("planning-poker-user-name", 'vitor', configCookie);
-    //   setCookie("planning-poker-admin", true, configCookie);
-
-
-    const starCountRef = ref(database, `rooms/${roomKey}`);
-
-    const fireEvent = onValue(starCountRef, (snapshot) => {
+    const firebaseRef = ref(database, `rooms/${roomKey}`);
+    const fireEvent = onValue(firebaseRef, (snapshot) => {
       const data = snapshot.val();
 
       setDataRoom(data);
     });
-
-    return () => {
-      remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
-
-
-
-      //remove user from firebase
-      //remove user from cookies
-      //remove listnner
-    }
 
   }, []);
 
@@ -130,7 +79,7 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
   }
 
   const handleToggleEditTitle = () => {
-    remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
+    setIsEditingTitle(!isEditingTitle);
   }
 
   const handleCreateNameToUser = (e: FormEvent) => {
@@ -192,36 +141,29 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   if (context.req.cookies['planning-poker-user-name']
     && context.req.cookies['planning-poker-admin']) {
-
-    const newUser = {
-      name: context.req.cookies['planning-poker-user-name'],
-      admin: context.req.cookies['planning-poker-admin'],
-    };
-
-    // const adminListRef = ref(database, `/rooms/${roomKey}/users`);
-    // const adminRef = push(adminListRef);
-
-    //  set(adminRef, newUser);
-
-    //  context.res.setHeader('set-cookie', `planning-poker-user-key=${adminRef.key}` || '');
-
     isFirstAccessParam = false;
-  } else {
+  }
+
+  const userListRef = ref(database, `/rooms/${roomKey}/users`);
+  const userRef = push(userListRef);
+
+  const dbRef = ref(database);
+
+  get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
     const newUser = {
-      name: '',
-      admin: false,
+      name: context.req.cookies['planning-poker-user-name'] || '',
+      admin: context.req.cookies['planning-poker-admin'] || true,
     };
 
-    const userListRef = ref(database, `/rooms/${roomKey}/users`);
-    const userRef = push(userListRef);
-
+    if (snapshot.exists()) {
+      newUser.admin = false;
+    }
     set(userRef, newUser);
+  }).catch((error) => {
+    console.error(error);
+  });
 
-    // context.res.setHeader('set-cookie', `planning-poker-user-name=${newUser.name}` || '');
-    //  context.res.setHeader('set-cookie', `planning-poker-admin=${newUser.admin}` || '');
-    context.res.setHeader('set-cookie', `planning-poker-user-key=${userRef.key}` || '');
-
-  }
+  context.res.setHeader('set-cookie', `planning-poker-user-key=${userRef.key}` || '');
 
   return {
     props: {

@@ -1,7 +1,16 @@
 import { Flex, Stack, Text } from "@chakra-ui/react"
 import { CardUserProps } from "../core/types";
 
-export function CardUser({ status = "initial", score }: CardUserProps) {
+type UserProps = {
+  key: string;
+  name: string;
+  admin: boolean;
+  score: number;
+  status: string;
+}
+
+export function CardUser({ status = "initial", score, name, key, admin }: UserProps) {
+  console.log(name);
   const showScore = status === 'showed';
   const borderColor = status === 'initial' ? 'blue.100' : 'brand.700';
   let bgColor = 'blue.100';
@@ -29,7 +38,7 @@ export function CardUser({ status = "initial", score }: CardUserProps) {
       >
         <Text fontWeight="semibold" fontSize={18}>{showScore && score}</Text>
       </Flex>
-      <Text fontWeight="bold">Vitor</Text>
+      <Text fontWeight="bold">{name}</Text>
     </Stack>
   )
 }

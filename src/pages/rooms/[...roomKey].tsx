@@ -14,9 +14,17 @@ type RoomKeyProp = ParsedUrlQuery & {
   isFirstAccessParam: boolean;
 };
 
+type UserProps = {
+  key: string;
+  name: string;
+  admin: boolean;
+  score: number;
+  status: string;
+}
+
 type DataRoomProps = {
   title: string;
-  users: string;
+  users: UserProps[];
   active: boolean;
 };
 
@@ -59,23 +67,23 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
   useEffect(() => {
     const firebaseRef = ref(database, `rooms/${roomKey}`);
-    const fireEvent = onValue(firebaseRef, (snapshot) => {
+    onValue(firebaseRef, (snapshot) => {
       const data = snapshot.val();
-
-      const users = Object.entries(data.users).map((key, user) => ({
-        key: key,
-        user: user,
-      }))
-
-      console.log(users)
 
       const dataFormatted = {
         ...data,
-//        users: 
+      };
+
+      if (data.users) {
+        const users = Object.entries(data.users).map((data) => ({
+          ...data[1] as UserProps,
+          key: data[0],
+        }))
+
+        dataFormatted.users = users
       }
 
-      setDataRoom(data);
-      console.log(data);
+      setDataRoom(dataFormatted);
     });
 
   }, []);
@@ -97,7 +105,6 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
   const handleCreateNameToUser = (e: FormEvent) => {
     e.preventDefault();
-    console.log(`/rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`);
 
     update(ref(database, `/rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`), { name: userName })
     setCookie("planning-poker-user-name", 'vitor', configCookie);
@@ -134,8 +141,19 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
             </Stack>
           )}
 
-          <Flex mt={200}>
-            <CardUser score={54} />
+          <Flex mt={100}>
+            <HStack spacing={10}>
+              {console.log(dataRoom?.users)}
+              {dataRoom?.users?.map((user: UserProps) => (
+                <CardUser
+                  key={user.key}
+                  status={user.status}
+                  name={user.name}
+                  admin={user.admin}
+                  score={user.score}
+                />
+              ))}
+            </HStack>
           </Flex>
         </Flex>
 
@@ -166,6 +184,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const newUser = {
       name: context.req.cookies['planning-poker-user-name'] || '',
       admin: true,
+      score: 0,
+      status: 'initial'
     };
 
     if (snapshot.exists()) {
@@ -173,6 +193,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
     set(userRef, newUser);
   }).catch((error) => {
+
     console.error(error);
   });
 

@@ -7,11 +7,12 @@ type UserProps = {
   admin: boolean;
   score: number;
   status: string;
+  roomStatus: string;
 }
 
-export function CardUser({ status = "initial", score, name, key, admin }: UserProps) {
+export function CardUser({ status = "initial", score, name, key, admin, roomStatus }: UserProps) {
   console.log(name);
-  const showScore = status === 'showed';
+  const showScore = roomStatus === 'showed';
   const borderColor = status === 'initial' ? 'blue.100' : 'brand.700';
   let bgColor = 'blue.100';
 

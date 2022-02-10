@@ -26,6 +26,7 @@ type DataRoomProps = {
   title: string;
   users: UserProps[];
   active: boolean;
+  status: string;
 };
 
 const configCookie = {
@@ -45,6 +46,8 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
   const [isFirstAccess, setIsFirstAccess] = useState(isFirstAccessParam);
   const [userName, setUserName] = useState('');
+
+  const [ableToShowScore, setAbleToShowScore] = useState(false);
 
   useEffect(() => {
     // exit to application
@@ -81,6 +84,10 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
         }))
 
         dataFormatted.users = users
+
+        const newAbleToShowScore = users.every((user: UserProps) => user.status === 'active');
+
+        setAbleToShowScore(newAbleToShowScore);
       }
 
       setDataRoom(dataFormatted);
@@ -111,6 +118,12 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
     setCookie("planning-poker-admin", true, configCookie);
   }
 
+  const handleShowScore = (e: FormEvent) => {
+    e.preventDefault();
+
+    update(ref(database, `/rooms/${roomKey}`), { status: 'showed' });
+  }
+
   const handleChooseScore = (score: number) => {
     console.log('score: ' + score);
 
@@ -129,9 +142,6 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
       console.error(error);
     });
-
-
-
   }
 
   return (
@@ -164,6 +174,15 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
             </Stack>
           )}
 
+          <Button
+            onClick={(e) => handleShowScore(e)}
+            mt={10}
+            disabled={!ableToShowScore}
+            colorScheme="blue"
+          >
+            Mostrar resultado
+          </Button>
+
           <Flex mt={100}>
             <HStack spacing={10}>
               {console.log(dataRoom?.users)}
@@ -174,12 +193,12 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
                   name={user.name}
                   admin={user.admin}
                   score={user.score}
+                  roomStatus={dataRoom.status}
                 />
               ))}
             </HStack>
           </Flex>
         </Flex>
-
       </Flex>
 
       <ListOfCards handleChooseScore={handleChooseScore} />

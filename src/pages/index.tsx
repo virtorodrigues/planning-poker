@@ -17,6 +17,8 @@ const Landing: NextPage = () => {
     set(roomRef, {
       title: 'Título e/ou descrição da task....',
       active: true,
+      status: 'hidden',
+      users: null,
     });
 
     history.push(`/rooms/${roomRef.key}`);

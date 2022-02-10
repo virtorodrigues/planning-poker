@@ -110,9 +110,28 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
     setCookie("planning-poker-user-name", 'vitor', configCookie);
     setCookie("planning-poker-admin", true, configCookie);
   }
-  
+
   const handleChooseScore = (score: number) => {
     console.log('score: ' + score);
+
+    let userScore = score;
+    let userStatus = 'active';
+
+    get(child(ref(database), `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`)).then((snapshot) => {
+      if (snapshot.val().score === score) {
+        userScore = 0;
+        userStatus = 'initial';
+      }
+
+      update(ref(database, `/rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`),
+        { score: userScore, status: userStatus })
+    }).catch((error) => {
+
+      console.error(error);
+    });
+
+
+
   }
 
   return (

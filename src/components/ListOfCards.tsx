@@ -2,7 +2,11 @@ import { Box } from '@chakra-ui/react'
 import { useState } from 'react';
 import { CardToChoose } from './CardToChoose'
 
-export function ListOfCards() {
+type ListOfCardsProps = {
+  handleChooseScore: (score: number) => void;
+}
+
+export function ListOfCards({ handleChooseScore }: ListOfCardsProps) {
   const [cards, setCards] = useState([
     { active: false, score: 1 },
     { active: false, score: 2 },
@@ -25,6 +29,7 @@ export function ListOfCards() {
       ? { ...card, active: !card.active }
       : card
     );
+    handleChooseScore(score);
 
     setCards(newCards)
   }

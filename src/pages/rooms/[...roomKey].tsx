@@ -110,6 +110,10 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
     setCookie("planning-poker-user-name", 'vitor', configCookie);
     setCookie("planning-poker-admin", true, configCookie);
   }
+  
+  const handleChooseScore = (score: number) => {
+    console.log('score: ' + score);
+  }
 
   return (
     <>
@@ -159,7 +163,7 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
       </Flex>
 
-      <ListOfCards />
+      <ListOfCards handleChooseScore={handleChooseScore} />
     </>
   )
 }

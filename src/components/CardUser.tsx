@@ -2,7 +2,6 @@ import { Flex, Stack, Text } from "@chakra-ui/react"
 import { CardUserProps } from "../core/types";
 
 type UserProps = {
-  key: string;
   name: string;
   admin: boolean;
   score: number;
@@ -10,20 +9,19 @@ type UserProps = {
   roomStatus: string;
 }
 
-export function CardUser({ status = "initial", score, name, key, admin, roomStatus }: UserProps) {
-  console.log(name);
+export function CardUser({ status = "initial", score, name, admin, roomStatus }: UserProps) {
   const showScore = roomStatus === 'showed';
   const borderColor = status === 'initial' ? 'blue.100' : 'brand.700';
   let bgColor = 'blue.100';
 
-  if (status === 'active') {
+  if (status === 'active' && !showScore) {
     bgColor = 'brand.700';
-  } else if (status === 'showed') {
+  } else if (showScore) {
     bgColor = 'transparent';
   }
 
   return (
-    <Stack>
+    <Stack marginX={2} alignItems="center">
       <Flex
         justifyContent="center"
         alignItems="center"

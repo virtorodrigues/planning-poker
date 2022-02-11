@@ -1,4 +1,4 @@
-import { Button, Flex, HStack, Input, Stack, Textarea } from '@chakra-ui/react';
+import { Box, Button, Flex, Grid, HStack, Input, Stack, Text, Textarea } from '@chakra-ui/react';
 import { child, get, off, onValue, push, ref, remove, set, update } from "firebase/database";
 import type { GetServerSideProps } from 'next';
 import { ParsedUrlQuery } from 'querystring';
@@ -12,6 +12,7 @@ import { useCookies } from "react-cookie"
 type RoomKeyProp = ParsedUrlQuery & {
   roomKey: string;
   isFirstAccessParam: boolean;
+  userParam: UserProps;
 };
 
 type UserProps = {
@@ -35,21 +36,23 @@ const configCookie = {
   sameSite: true,
 };
 
-const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
+const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
 
   const [cookie, setCookie] = useCookies();
-  const [userKeyCookie, setUserKeyCookie] = useCookies(["planning-poker-user-key"]);
 
   const [dataRoom, setDataRoom] = useState({} as DataRoomProps);
+  const [user, setUser] = useState(userParam as UserProps);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [taskTitleForm, setTaskTitleForm] = useState('' as string);
 
-  const [isFirstAccess, setIsFirstAccess] = useState(isFirstAccessParam);
+  const [isAbleToEditUserName, setIsAbleToEditUserName] = useState(isFirstAccessParam);
   const [userName, setUserName] = useState('');
+  const [isReestartScore, setIsReestartScore] = useState(false);
 
   const [ableToShowScore, setAbleToShowScore] = useState(false);
 
   useEffect(() => {
+    console.log(userParam);
     // exit to application
     if (typeof window != "undefined") { // needed if SSR
       //if (window) {
@@ -60,7 +63,7 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
         //verificar se for admin, passar admin para outro player
         //se só tiver o admin na sala, exluir a sala
 
-        remove(ref(database, `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`));
+        remove(ref(database, `rooms/${roomKey}/users/${user.key}`));
 
         (e || window.event).returnValue = confirmationMessage; //Gecko + IE
         return confirmationMessage;                            //Webkit, Safari, Chrome
@@ -85,15 +88,36 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
         dataFormatted.users = users
 
-        const newAbleToShowScore = users.every((user: UserProps) => user.status === 'active');
+        const newAbleToShowScore = users.every((user: UserProps) => user.status === 'active') && dataFormatted.status === 'hidden';
 
         setAbleToShowScore(newAbleToShowScore);
+
+        const newUser = users.find(u => u.key === user.key);
+        if (newUser) {
+          setUser(newUser);
+        }
       }
+
+      if (dataFormatted.status === 'showed') {
+        setAbleToShowScore(false);
+      }
+
+
 
       setDataRoom(dataFormatted);
     });
 
   }, []);
+
+  useEffect(() => {
+    if (dataRoom.status === 'hidden') {
+      get(child(ref(database), `rooms/${roomKey}/users/${user.key}`)).then((snapshot) => {
+        if (snapshot.val().score === 0) {
+          setIsReestartScore(true);
+        }
+      });
+    }
+  }, [dataRoom.users]);
 
   const handleApplyTaskTitle = (e: FormEvent) => {
     e.preventDefault();
@@ -113,95 +137,160 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
   const handleCreateNameToUser = (e: FormEvent) => {
     e.preventDefault();
 
-    update(ref(database, `/rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`), { name: userName })
-    setCookie("planning-poker-user-name", 'vitor', configCookie);
-    setCookie("planning-poker-admin", true, configCookie);
+    if (isAbleToEditUserName) {
+      update(ref(database, `/rooms/${roomKey}/users/${user.key}`), { name: userName })
+      setCookie("planning-poker-user-name", 'vitor', configCookie);
+
+      setIsAbleToEditUserName(false);
+      setUserName('');
+    }
   }
 
   const handleShowScore = (e: FormEvent) => {
     e.preventDefault();
 
-    update(ref(database, `/rooms/${roomKey}`), { status: 'showed' });
+    if (ableToShowScore) {
+      update(ref(database, `/rooms/${roomKey}`), { status: 'showed' });
+      setAbleToShowScore(false);
+    }
+  }
+
+  const handleRestart = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (dataRoom.status === "showed") {
+      update(ref(database, `/rooms/${roomKey}`), { status: 'hidden' });
+
+      dataRoom.users.map(user => {
+        update(ref(database, `/rooms/${roomKey}/users/${user.key}`), {
+          score: 0,
+          status: 'initial',
+        });
+      })
+      setAbleToShowScore(false);
+    }
   }
 
   const handleChooseScore = (score: number) => {
-    console.log('score: ' + score);
 
-    let userScore = score;
-    let userStatus = 'active';
+    if (dataRoom.status === 'hidden') {
+      let userScore = score;
+      let userStatus = 'active';
 
-    get(child(ref(database), `rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`)).then((snapshot) => {
-      if (snapshot.val().score === score) {
-        userScore = 0;
-        userStatus = 'initial';
+      if (isReestartScore) {
+        setIsReestartScore(false);
       }
 
-      update(ref(database, `/rooms/${roomKey}/users/${userKeyCookie['planning-poker-user-key']}`),
-        { score: userScore, status: userStatus })
-    }).catch((error) => {
+      get(child(ref(database), `rooms/${roomKey}/users/${user.key}`)).then((snapshot) => {
+        if (snapshot.val().score === score) {
+          userScore = 0;
+          userStatus = 'initial';
+        }
 
-      console.error(error);
-    });
+        update(ref(database, `/rooms/${roomKey}/users/${user.key}`),
+          { score: userScore, status: userStatus });
+
+      }).catch((error) => {
+
+        console.error(error);
+      });
+    }
+  }
+
+  const handleAbleToEditUserName = (e: FormEvent) => {
+    e.preventDefault();
+    setIsAbleToEditUserName(true);
   }
 
   return (
     <>
-      <Flex direction="column" justify="center" align="center" my="120px">
+      <Flex m={5}>
+        <Text>Olá {user.name}</Text>
+        <Button type="submit" size='xs' ml={3} onClick={(e) => handleAbleToEditUserName(e)} colorScheme="blue">Editar</Button>
+      </Flex>
+      <Flex direction="column" justify="center" align="center" mb="120px" mt="50px">
         <Flex justify="center" align="center" direction="column" flex={1}>
 
-          {isFirstAccess && (
-            <Flex mb={10}>
+          {isAbleToEditUserName && (
+            <Flex mb={10} align="center">
               <Input onChange={(e) => setUserName(e.target.value)} value={userName} placeholder='Como quer ser chamado?' />
-              <Button ml={6} onClick={(e) => handleCreateNameToUser(e)} colorScheme="blue">Confirmar</Button>
+              <Button type="submit" size='xs' ml={6} p={4} onClick={(e) => handleCreateNameToUser(e)} colorScheme="blue">Confirmar</Button>
             </Flex>
           )}
 
-          <Flex align="center">
+          <Flex align="center" px={10} flexDir={["column", "row"]}>
             <TaskTitle taskTitle={dataRoom.title} />
-            {!isEditingTitle && (
-              <Button ml={6} onClick={handleToggleEditTitle} colorScheme="blue">Editar</Button>
+            {!isEditingTitle && user.admin && (
+              <Button size='xs' ml={6} p={3} onClick={handleToggleEditTitle} colorScheme="blue">Editar</Button>
             )}
           </Flex>
 
           {!dataRoom.title || isEditingTitle && (
-            <Stack mt={100} maxWidth={780} w={780} spacing={5} align="end">
-              <Textarea onChange={(e) => setTaskTitleForm(e.target.value)} maxHeight={200} maxWidth={780} placeholder="Digite o título da tarefa...." />
+            <Stack mt={25} maxWidth={300} spacing={5} justifyContent={"center"}>
+              <Textarea
+                onChange={(e) => setTaskTitleForm(e.target.value)}
+                maxHeight={200}
+                width="100%"
+                minW={300}
+                placeholder="Digite o título da tarefa...."
+              />
 
               <HStack>
-                <Button onClick={(e) => handleApplyTaskTitle(e)} width={100} colorScheme="blue">Confirmar</Button>
-                <Button onClick={(e) => setIsEditingTitle(false)} width={100}>Cancelar</Button>
+                <Button size='xs' onClick={(e) => handleApplyTaskTitle(e)} colorScheme="blue">Confirmar</Button>
+                <Button size='xs' onClick={(e) => setIsEditingTitle(false)}>Cancelar</Button>
               </HStack>
             </Stack>
           )}
 
-          <Button
-            onClick={(e) => handleShowScore(e)}
-            mt={10}
-            disabled={!ableToShowScore}
-            colorScheme="blue"
-          >
-            Mostrar resultado
-          </Button>
+          {user.admin && (
+            <Button
+              onClick={(e) => handleShowScore(e)}
+              mt={10}
+              disabled={!ableToShowScore}
+              colorScheme="blue"
+            >
+              Mostrar resultado
+            </Button>
+          )}
 
-          <Flex mt={100}>
-            <HStack spacing={10}>
-              {console.log(dataRoom?.users)}
-              {dataRoom?.users?.map((user: UserProps) => (
-                <CardUser
-                  key={user.key}
-                  status={user.status}
-                  name={user.name}
-                  admin={user.admin}
-                  score={user.score}
-                  roomStatus={dataRoom.status}
-                />
-              ))}
-            </HStack>
+          {dataRoom.status === "showed" && user.admin && (
+            <Button
+              onClick={(e) => handleRestart(e)}
+              mt={10}
+              colorScheme="blue"
+            >
+              Reiniciar
+            </Button>
+          )}
+
+          <Flex mt={35} >
+            {dataRoom?.users && (
+              <Grid
+                ml={5}
+                mr={5}
+                templateRows='repeat(2, 1fr)'
+                templateColumns='repeat(4, 1fr)'
+                gap={4}
+              >
+                {dataRoom?.users?.map((user: UserProps) => (
+                  <Box key={user.key} py={5} as="li" display="inline-block">
+                    <CardUser
+                      status={user.status}
+                      name={user.name}
+                      admin={user.admin}
+                      score={user.score}
+                      roomStatus={dataRoom.status}
+                    />
+                  </Box>
+                ))}
+              </Grid>
+            )}
+
           </Flex>
         </Flex>
       </Flex>
 
-      <ListOfCards handleChooseScore={handleChooseScore} />
+      <ListOfCards isReestartScore={isReestartScore} handleChooseScore={handleChooseScore} />
     </>
   )
 }
@@ -212,8 +301,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { roomKey } = context.params as RoomKeyProp;
   let isFirstAccessParam = true;
 
-  if (context.req.cookies['planning-poker-user-name']
-    && context.req.cookies['planning-poker-admin']) {
+  if (context.req.cookies['planning-poker-user-name']) {
     isFirstAccessParam = false;
   }
 
@@ -222,29 +310,35 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const dbRef = ref(database);
 
-  get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
-    const newUser = {
-      name: context.req.cookies['planning-poker-user-name'] || '',
-      admin: true,
-      score: 0,
-      status: 'initial'
-    };
+  const newUser = {
+    name: context.req.cookies['planning-poker-user-name'] || '',
+    admin: false,
+    score: 0,
+    status: 'initial',
+    key: '',
+  };
 
-    if (snapshot.exists()) {
-      newUser.admin = false;
+  await get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
+
+    if (!snapshot.val()) {
+      newUser.admin = true;
     }
+
     set(userRef, newUser);
+
   }).catch((error) => {
 
     console.error(error);
   });
 
-  context.res.setHeader('set-cookie', `planning-poker-user-key=${userRef.key}` || '');
+  newUser.key = userRef.key || '';
+
 
   return {
     props: {
       roomKey,
-      isFirstAccessParam
+      isFirstAccessParam,
+      userParam: newUser,
     }
   }
 }

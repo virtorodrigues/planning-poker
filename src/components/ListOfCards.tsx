@@ -1,12 +1,13 @@
 import { Box } from '@chakra-ui/react'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CardToChoose } from './CardToChoose'
 
 type ListOfCardsProps = {
   handleChooseScore: (score: number) => void;
+  isReestartScore: boolean;
 }
 
-export function ListOfCards({ handleChooseScore }: ListOfCardsProps) {
+export function ListOfCards({ isReestartScore, handleChooseScore }: ListOfCardsProps) {
   const [cards, setCards] = useState([
     { active: false, score: 1 },
     { active: false, score: 2 },
@@ -24,6 +25,17 @@ export function ListOfCards({ handleChooseScore }: ListOfCardsProps) {
     { active: false, score: 14 },
   ]);
 
+  useEffect(() => {
+    if (isReestartScore) {
+      const newCards = cards.map(card => card.active
+        ? { ...card, active: false }
+        : card
+      );
+
+      setCards(newCards)
+    }
+  }, [isReestartScore]);
+
   const handleActiveCard = (score: number) => {
     const newCards = cards.map(card => card.score === score || card.active
       ? { ...card, active: !card.active }
@@ -38,12 +50,12 @@ export function ListOfCards({ handleChooseScore }: ListOfCardsProps) {
     <Box position="fixed" bottom="0" left="0" right="0" bg="white">
       <Box
         as="ul"
-        overflowY={"hidden"}
-        overflowX={"auto"}
+        overflowY="hidden"
+        overflowX="auto"
         paddingX={[5, 5, 10]}
-        whiteSpace={'nowrap'}
+        whiteSpace="nowrap"
         width={"100%"}
-        listStyleType={"none"}
+        listStyleType="none"
         textAlign="center"
       >
         {cards.map((card, index) => (

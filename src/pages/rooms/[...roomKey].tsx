@@ -127,8 +127,8 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
         setAbleToShowScore(newAbleToShowScore);
 
-    
-  
+
+
       }
 
       if (dataFormatted.status === 'showed') {
@@ -172,11 +172,11 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
     if (isAbleToEditUserName) {
       update(ref(database, `/rooms/${roomKey}/users/${user.key}`), { name: userName })
-      setCookie("planning-poker-user-name", 'vitor', configCookie);
+      setCookie("planning-poker-user-name", userName, configCookie);
 
       setIsAbleToEditUserName(false);
       setUserName('');
-      setUser({...user, name: userName});
+      setUser({ ...user, name: userName });
     }
   }
 

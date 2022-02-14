@@ -12,7 +12,6 @@ import { useCookies } from "react-cookie"
 type RoomKeyProp = ParsedUrlQuery & {
   roomKey: string;
   isFirstAccessParam: boolean;
-  userParam: UserProps;
 };
 
 type UserProps = {
@@ -36,12 +35,12 @@ const configCookie = {
   sameSite: true,
 };
 
-const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
+const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
-  const [cookie, setCookie] = useCookies();
+  const [cookie, setCookie] = useCookies(['planning-poker-user-name']);
 
   const [dataRoom, setDataRoom] = useState({} as DataRoomProps);
-  const [user, setUser] = useState(userParam as UserProps);
+  const [user, setUser] = useState({} as UserProps);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [taskTitleForm, setTaskTitleForm] = useState('' as string);
 
@@ -52,7 +51,41 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
   const [ableToShowScore, setAbleToShowScore] = useState(false);
 
   useEffect(() => {
-    console.log(userParam);
+
+    const userListRef = ref(database, `/rooms/${roomKey}/users`);
+    const userRef = push(userListRef);
+
+    const dbRef = ref(database);
+
+    const newUser = {
+      name: cookie['planning-poker-user-name'] || '',
+      admin: false,
+      score: 0,
+      status: 'initial',
+    };
+
+    async function createUser() {
+
+      await get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
+
+        if (!snapshot.val()) {
+          newUser.admin = true;
+        }
+
+        set(userRef, newUser);
+
+
+      }).catch((error) => {
+
+        console.error(error);
+      });
+
+      setUser({ ...newUser, key: userRef.key || '' });
+
+    }
+    createUser();
+
+
     // exit to application
     if (typeof window != "undefined") { // needed if SSR
       //if (window) {
@@ -63,7 +96,7 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
         //verificar se for admin, passar admin para outro player
         //se só tiver o admin na sala, exluir a sala
 
-        remove(ref(database, `rooms/${roomKey}/users/${user.key}`));
+        remove(ref(database, `rooms/${roomKey}/users/${userRef.key}`));
 
         (e || window.event).returnValue = confirmationMessage; //Gecko + IE
         return confirmationMessage;                            //Webkit, Safari, Chrome
@@ -80,6 +113,8 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
         ...data,
       };
 
+      console.log('datauser: ' + data.users)
+
       if (data.users) {
         const users = Object.entries(data.users).map((data) => ({
           ...data[1] as UserProps,
@@ -92,10 +127,8 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
 
         setAbleToShowScore(newAbleToShowScore);
 
-        const newUser = users.find(u => u.key === user.key);
-        if (newUser) {
-          setUser(newUser);
-        }
+    
+  
       }
 
       if (dataFormatted.status === 'showed') {
@@ -112,7 +145,7 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
   useEffect(() => {
     if (dataRoom.status === 'hidden') {
       get(child(ref(database), `rooms/${roomKey}/users/${user.key}`)).then((snapshot) => {
-        if (snapshot.val().score === 0) {
+        if (snapshot.val()?.score === 0) {
           setIsReestartScore(true);
         }
       });
@@ -143,6 +176,7 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
 
       setIsAbleToEditUserName(false);
       setUserName('');
+      setUser({...user, name: userName});
     }
   }
 
@@ -172,7 +206,6 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
   }
 
   const handleChooseScore = (score: number) => {
-
     if (dataRoom.status === 'hidden') {
       let userScore = score;
       let userStatus = 'active';
@@ -204,7 +237,7 @@ const Game = ({ roomKey, isFirstAccessParam, userParam }: RoomKeyProp) => {
 
   return (
     <>
-      <Flex m={5}>
+      <Flex m={5} justifyContent="flex-end">
         <Text>Olá {user.name}</Text>
         <Button type="submit" size='xs' ml={3} onClick={(e) => handleAbleToEditUserName(e)} colorScheme="blue">Editar</Button>
       </Flex>
@@ -305,40 +338,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     isFirstAccessParam = false;
   }
 
-  const userListRef = ref(database, `/rooms/${roomKey}/users`);
-  const userRef = push(userListRef);
-
-  const dbRef = ref(database);
-
-  const newUser = {
-    name: context.req.cookies['planning-poker-user-name'] || '',
-    admin: false,
-    score: 0,
-    status: 'initial',
-    key: '',
-  };
-
-  await get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
-
-    if (!snapshot.val()) {
-      newUser.admin = true;
-    }
-
-    set(userRef, newUser);
-
-  }).catch((error) => {
-
-    console.error(error);
-  });
-
-  newUser.key = userRef.key || '';
-
-
   return {
     props: {
       roomKey,
       isFirstAccessParam,
-      userParam: newUser,
     }
   }
 }

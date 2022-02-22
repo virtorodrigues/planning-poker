@@ -8,6 +8,7 @@ import { ListOfCards } from '../../components/ListOfCards';
 import { TaskTitle } from '../../components/TaskTitle';
 import { database } from '../../services/firebase';
 import { useCookies } from "react-cookie"
+import { useUserContext } from '../../hooks/useUserContext';
 
 type RoomKeyProp = ParsedUrlQuery & {
   roomKey: string;
@@ -39,8 +40,10 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
 
   const [cookie, setCookie] = useCookies(['planning-poker-user-name']);
 
+  const { setUser, user, createUser } = useUserContext();
+
   const [dataRoom, setDataRoom] = useState({} as DataRoomProps);
-  const [user, setUser] = useState({} as UserProps);
+  // const [user, setUser] = useState({} as UserProps);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [taskTitleForm, setTaskTitleForm] = useState('' as string);
 
@@ -51,50 +54,16 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
   const [ableToShowScore, setAbleToShowScore] = useState(false);
 
   useEffect(() => {
-
     const userListRef = ref(database, `/rooms/${roomKey}/users`);
     const userRef = push(userListRef);
 
-    const dbRef = ref(database);
-
-    const newUser = {
-      name: cookie['planning-poker-user-name'] || '',
-      admin: false,
-      score: 0,
-      status: 'initial',
-    };
-
-    async function createUser() {
-
-      await get(child(dbRef, `rooms/${roomKey}/users`)).then((snapshot) => {
-
-        if (!snapshot.val()) {
-          newUser.admin = true;
-        }
-
-        set(userRef, newUser);
-
-
-      }).catch((error) => {
-
-        console.error(error);
-      });
-
-      setUser({ ...newUser, key: userRef.key || '' });
-
-    }
-    createUser();
-
+    createUser({ roomKey, userRef });
 
     // exit to application
     if (typeof window != "undefined") { // needed if SSR
       //if (window) {
       window.addEventListener("beforeunload", function (e) {
         var confirmationMessage = "\o/";
-
-
-        //verificar se for admin, passar admin para outro player
-        //se só tiver o admin na sala, exluir a sala
 
         remove(ref(database, `rooms/${roomKey}/users/${userRef.key}`));
 
@@ -113,8 +82,6 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
         ...data,
       };
 
-      console.log('datauser: ' + data.users)
-
       if (data.users) {
         const users = Object.entries(data.users).map((data) => ({
           ...data[1] as UserProps,
@@ -126,16 +93,11 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
         const newAbleToShowScore = users.every((user: UserProps) => user.status === 'active') && dataFormatted.status === 'hidden';
 
         setAbleToShowScore(newAbleToShowScore);
-
-
-
       }
 
       if (dataFormatted.status === 'showed') {
         setAbleToShowScore(false);
       }
-
-
 
       setDataRoom(dataFormatted);
     });

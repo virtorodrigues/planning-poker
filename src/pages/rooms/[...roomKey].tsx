@@ -1,34 +1,15 @@
 import { Box, Button, Flex, Grid, HStack, Input, Stack, Text, Textarea } from '@chakra-ui/react';
 import { child, get, off, onValue, push, ref, remove, set, update } from "firebase/database";
 import type { GetServerSideProps } from 'next';
-import { ParsedUrlQuery } from 'querystring';
 import { FormEvent, useEffect, useState } from 'react';
 import { CardUser } from '../../components/CardUser';
 import { ListOfCards } from '../../components/ListOfCards';
 import { TaskTitle } from '../../components/TaskTitle';
 import { database } from '../../services/firebase';
 import { useCookies } from "react-cookie"
-import { useUserContext } from '../../hooks/useUserContext';
-
-type RoomKeyProp = ParsedUrlQuery & {
-  roomKey: string;
-  isFirstAccessParam: boolean;
-};
-
-type UserProps = {
-  key: string;
-  name: string;
-  admin: boolean;
-  score: number;
-  status: string;
-}
-
-type DataRoomProps = {
-  title: string;
-  users: UserProps[];
-  active: boolean;
-  status: string;
-};
+import { useUserContext } from '../../core/hooks/useUserContext';
+import { DataRoomProps, RoomKeyProp, UserProps } from '../../core/types';
+import { useTitleTaskContext } from '../../core/hooks/useTitleTaskContext';
 
 const configCookie = {
   path: "/",
@@ -37,21 +18,16 @@ const configCookie = {
 };
 
 const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
-
-  const [cookie, setCookie] = useCookies(['planning-poker-user-name']);
+  const [, setCookie] = useCookies(['planning-poker-user-name']);
 
   const { setUser, user, createUser } = useUserContext();
 
   const [dataRoom, setDataRoom] = useState({} as DataRoomProps);
-  // const [user, setUser] = useState({} as UserProps);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [taskTitleForm, setTaskTitleForm] = useState('' as string);
 
-  const [isAbleToEditUserName, setIsAbleToEditUserName] = useState(isFirstAccessParam);
-  const [userName, setUserName] = useState('');
-  const [isReestartScore, setIsReestartScore] = useState(false);
-
-  const [ableToShowScore, setAbleToShowScore] = useState(false);
+  const [isAbleToEditUserName, setIsAbleToEditUserName] = useState(isFirstAccessParam as boolean);
+  const [userName, setUserName] = useState('' as string);
+  const [isReestartScore, setIsReestartScore] = useState(false as boolean);
+  const [ableToShowScore, setAbleToShowScore] = useState(false as boolean);
 
   useEffect(() => {
     const userListRef = ref(database, `/rooms/${roomKey}/users`);
@@ -113,21 +89,6 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
       });
     }
   }, [dataRoom.users]);
-
-  const handleApplyTaskTitle = (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!taskTitleForm) {
-      return;
-    }
-
-    update(ref(database, `/rooms/${roomKey}`), { title: taskTitleForm })
-      .then(() => setIsEditingTitle(false));
-  }
-
-  const handleToggleEditTitle = () => {
-    setIsEditingTitle(!isEditingTitle);
-  }
 
   const handleCreateNameToUser = (e: FormEvent) => {
     e.preventDefault();
@@ -213,29 +174,7 @@ const Game = ({ roomKey, isFirstAccessParam }: RoomKeyProp) => {
             </Flex>
           )}
 
-          <Flex align="center" px={10} flexDir={["column", "row"]}>
-            <TaskTitle taskTitle={dataRoom.title} />
-            {!isEditingTitle && user.admin && (
-              <Button size='xs' ml={6} p={3} onClick={handleToggleEditTitle} colorScheme="blue">Editar</Button>
-            )}
-          </Flex>
-
-          {!dataRoom.title || isEditingTitle && (
-            <Stack mt={25} maxWidth={300} spacing={5} justifyContent={"center"}>
-              <Textarea
-                onChange={(e) => setTaskTitleForm(e.target.value)}
-                maxHeight={200}
-                width="100%"
-                minW={300}
-                placeholder="Digite o título da tarefa...."
-              />
-
-              <HStack>
-                <Button size='xs' onClick={(e) => handleApplyTaskTitle(e)} colorScheme="blue">Confirmar</Button>
-                <Button size='xs' onClick={(e) => setIsEditingTitle(false)}>Cancelar</Button>
-              </HStack>
-            </Stack>
-          )}
+          <TaskTitle taskTitle={dataRoom.title} admin={user.admin} roomKey={roomKey} />
 
           {user.admin && (
             <Button

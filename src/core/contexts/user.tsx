@@ -1,18 +1,11 @@
 import { child, get, push, ref, set, ThenableReference } from "firebase/database";
 import { createContext, ReactNode, useMemo, useState } from "react";
 import { useCookies } from "react-cookie";
-import { database } from "../services/firebase";
+import { database } from "../../services/firebase";
+import { UserProps } from "../types";
 
 type UserProviderProps = {
   children: ReactNode;
-}
-
-type UserProps = {
-  key: string;
-  name: string;
-  admin: boolean;
-  score: number;
-  status: string;
 }
 
 type UserContextProps = {
@@ -25,7 +18,6 @@ type CreateUserProps = {
   roomKey: string;
   userRef: ThenableReference;
 }
-
 
 const UserContext = createContext({} as UserContextProps);
 

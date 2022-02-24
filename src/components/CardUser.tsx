@@ -9,7 +9,7 @@ type UserProps = {
   roomStatus: string;
 }
 
-export function CardUser({ status = "initial", score, name, admin, roomStatus }: UserProps) {
+export function CardUser({ status = "initial", score, name, roomStatus }: UserProps) {
   const showScore = roomStatus === 'showed';
   const borderColor = status === 'initial' ? 'blue.100' : 'brand.700';
   let bgColor = 'blue.100';
